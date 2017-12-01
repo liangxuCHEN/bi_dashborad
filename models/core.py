@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """A collection of ORM sqlalchemy models for Superset"""
 from __future__ import absolute_import
 from __future__ import division
@@ -137,6 +138,7 @@ class Slice(Model, AuditMixinNullable, ImportMixin):
     @datasource.getter
     @utils.memoized
     def get_datasource(self):
+        # 数据库链接
         return (
             db.session.query(self.cls_model)
             .filter_by(id=self.datasource_id)
@@ -646,6 +648,7 @@ class Database(Model, AuditMixinNullable):
         return self.get_sqla_engine().dialect.identifier_preparer.quote
 
     def get_df(self, sql, schema):
+        # 拿数据
         sql = sql.strip().strip(';')
         eng = self.get_sqla_engine(schema=schema)
         df = pd.read_sql(sql, eng)

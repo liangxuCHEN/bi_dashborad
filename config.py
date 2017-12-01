@@ -79,7 +79,7 @@ WTF_CSRF_ENABLED = True
 WTF_CSRF_EXEMPT_LIST = []
 
 # Whether to run the web server in debug mode or not
-DEBUG = False
+DEBUG = True
 FLASK_USE_RELOAD = True
 
 # Whether to show the stacktrace on 500 error
@@ -178,7 +178,7 @@ IMG_UPLOAD_URL = '/static/uploads/'
 # IMG_SIZE = (300, 200, True)
 
 CACHE_DEFAULT_TIMEOUT = 60 * 60 * 24
-CACHE_CONFIG = {'CACHE_TYPE': 'redis'}
+#CACHE_CONFIG = {'CACHE_TYPE': 'redis'}
 TABLE_NAMES_CACHE_CONFIG = {'CACHE_TYPE': 'null'}
 
 # CORS Options

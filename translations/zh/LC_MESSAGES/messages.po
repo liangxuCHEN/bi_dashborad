@@ -3466,7 +3466,7 @@ msgstr "看板"
 
 #: superset/views/core.py:476
 msgid "Slug"
-msgstr "Slug"
+msgstr "网页链接简称（英文）"
 
 #: superset/views/core.py:481
 msgid "Position JSON"
