@@ -171,7 +171,7 @@ def generate_download_headers(extension):
     return headers
 
 
-class DatabaseView(SupersetModelView, DeleteMixin):  # noqa
+class DatabaseView(SupersetModelView, DeleteMixin):  # noqa appbuilder view
     datamodel = SQLAInterface(models.Database)
 
     list_title = _('List Databases')
@@ -906,6 +906,7 @@ class Superset(BaseSupersetView):
         # get form data from url
         if request.args.get("form_data"):
             form_data = request.args.get("form_data")
+            #print(form_data)
         elif request.form.get("form_data"):
             # Supporting POST as well as get
             form_data = request.form.get("form_data")
@@ -945,6 +946,7 @@ class Superset(BaseSupersetView):
 
     @has_access
     @expose("/slice/<slice_id>/")
+    # 获取 slice form_data 参数
     def slice(self, slice_id):
         viz_obj = self.get_viz(slice_id)
         endpoint = (
@@ -958,6 +960,17 @@ class Superset(BaseSupersetView):
         if request.args.get("standalone") == "true":
             endpoint += '&standalone=true'
         return redirect(endpoint)
+
+    @has_access
+    @expose("/slice_json/<slice_id>/")
+    # 测试例子,获取 form_data
+    def slice_json(self, slice_id):
+        viz_obj = self.get_viz(slice_id)
+        # print(viz_obj)
+        return Response(
+            json.dumps(viz_obj.form_data),
+            status=200,
+            mimetype="application/json")
 
     def get_query_string_response(self, viz_obj):
         try:
@@ -2453,3 +2466,8 @@ def caravel(url):  # noqa
 
 
 # ---------------------------------------------------------------------
+
+
+@app.route('/test_api')
+def test_api():
+    return render_template('echart/echart_test.html')
