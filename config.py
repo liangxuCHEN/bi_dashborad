@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """The main config file for Superset
 
 All configuration in this file can be overridden by providing a superset_config
@@ -92,10 +93,10 @@ ENABLE_PROXY_FIX = True
 # GLOBALS FOR APP Builder
 # ------------------------------
 # Uncomment to setup Your App name
-APP_NAME = "Superset"
+APP_NAME = "BI系统"
 
 # Uncomment to setup an App icon
-APP_ICON = "/static/assets/images/superset-logo@2x.png"
+APP_ICON = "/static/assets/images/logo.png"
 
 # Druid query timezone
 # tz.tzutc() : Using utc timezone

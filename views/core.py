@@ -1777,7 +1777,7 @@ class Superset(BaseSupersetView):
                     'superset/request_access/?'
                     'dashboard_id={dash.id}&'.format(**locals()))
 
-        # Hack to log the dashboard_id properly, even when getting a slug
+        # Hack to log the dashboard_id properly, even when getting a slug （记录id，不记录slug链接）
         @log_this
         def dashboard(**kwargs):  # noqa
             pass
@@ -1802,6 +1802,7 @@ class Superset(BaseSupersetView):
             'datasources': {ds.uid: ds.data for ds in datasources},
             'common': self.common_bootsrap_payload(),
         }
+        print(bootstrap_data['dashboard_data'])
 
         return self.render_template(
             "superset/dashboard.html",
@@ -1810,6 +1811,42 @@ class Superset(BaseSupersetView):
             title='[dashboard] ' + dash.dashboard_title,
             bootstrap_data=json.dumps(bootstrap_data),
         )
+
+
+    @has_access
+    @expose("/dashboard_json/<dashboard_id>/")
+    def dashboard_json(self, dashboard_id):
+        """改写dashboard， 返回api"""
+        session = db.session()
+        qry = session.query(models.Dashboard)
+        if dashboard_id.isdigit():
+            qry = qry.filter_by(id=int(dashboard_id))
+        else:
+            qry = qry.filter_by(slug=dashboard_id)
+
+        dash = qry.one()
+        datasources = set()
+        for slc in dash.slices:
+            datasource = slc.datasource
+            if datasource:
+                datasources.add(datasource)
+
+        for datasource in datasources:
+            if datasource and not self.datasource_access(datasource):
+                return Response(
+                    json.dumps({'status':401, 'message':'你没有权限查看，请向管理员申请'}),
+                    status=200,
+                    mimetype="application/json")
+        # 为了记录id，不记录slug，写一个临时函数记录一下
+        @log_this
+        def dashboard(**kwargs):  # noqa
+            pass
+        dashboard(dashboard_id=dash.id)
+
+        return Response(
+            json.dumps(dash.data),
+            status=200,
+            mimetype="application/json")
 
     @has_access
     @expose("/sync_druid/", methods=['POST'])
@@ -2116,6 +2153,7 @@ class Superset(BaseSupersetView):
         logging.info("Triggering query_id: {}".format(query_id))
 
         # Async request.
+        # 可以用消息队列去查询
         if async:
             logging.info("Running query on a Celery worker")
             # Ignore the celery future object and the request may time out.
@@ -2317,6 +2355,7 @@ class Superset(BaseSupersetView):
     @expose("/profile/<username>/")
     def profile(self, username):
         """User profile page"""
+        # TODO: 列表覆盖原来的dashborad_url,改为我们，或者把原来的方法和我们的方法调换
         if not username and g.user:
             username = g.user.username
         user = (
@@ -2471,3 +2510,8 @@ def caravel(url):  # noqa
 @app.route('/test_api')
 def test_api():
     return render_template('echart/echart_test.html')
+
+
+@app.route('/test_dashboard_api')
+def test_api_2():
+    return render_template('echart/dashboard_test.html')

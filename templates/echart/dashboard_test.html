@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="BI system demo">
+    <meta name="author" content="Louis">
+
+    <!-- Bootstrap core CSS -->
+    <link href="http://192.168.0.94:8089/static/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="http://192.168.0.94:8089/static/css/bootstrap-theme.min.css" rel="stylesheet">
+    <script src="http://192.168.0.94:8089/static/js/jquery-2.0.3.min.js"></script>
+    <script src="http://192.168.0.94:8089/static/js/bootstrap.min.js"></script>
+    <script src="http://192.168.0.94:8089/static/js/echarts.js" charset="utf-8"></script>
+	<script type="text/javascript" src="http://192.168.0.94:8089/static/js/dataTool.min.js"></script>
+    <title>展示板</title>
+  </head>
+
+<body role="document">
+    <div class="container-fluid">
+        <div class="row"><div class="page-header" id='dashboard_title'></div></div>
+        <div class="row bg-info">
+            <div class="col-md-5">
+                <div id="bar" style="height:600px;"></div>
+            </div>
+
+            <div class="col-md-3">
+                <div id="pie" style="height:600px;"></div>
+            </div>
+
+            <div class="col-md-1">
+              <div class="form-group">
+                 <div class="checkbox">
+                    <label>
+                        <input class="form-control" type="checkbox" name="gender" id="boy" checked="checked" onclick="reflash()">男性
+                    </label>
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input class="form-control" type="checkbox" name="gender" id="girl" checked="checked" onclick="reflash()">女性
+                    </label>
+                </div>
+              </div>
+            </div>
+        </div>
+    </div>
+<script type="text/javascript">
+
+
+// 这是最简单的使用例子， 后期前端封装
+
+//第一步拿dashboard 包含的slice数据
+    // var myChart1= echarts.init(document.getElementById('pie'));
+    // var url = '/superset/explore_json/table/'
+    // var url_form_data = '/superset/slice_json/37'
+    // var form_data = {"slice_id": 18, "viz_type": "pie", "row_limit": 50000, "metric": "sum__num", "since": "100 years ago", "groupby": ["gender"], "metrics": ["sum__num"], "compare_lag": "10", "limit": "25", "until": "now", "granularity": "ds", "markup_type": "markdown", "where": "", "compare_suffix": "o10Y", "datasource": "3__table"}
+    
+    $(document).ready(function(){
+        reflash()
+    })
+
+    function gene_series(data, legend) {
+        var serie = [];
+        data.forEach(function(val,index,arr){
+            var item = {
+                name:legend[index],
+                type: 'bar',
+                barMaxWidth: 60,
+                barGap: "10%",
+                data: val
+            }
+            serie.push(item);
+        })
+            
+        return serie
+    }
+    //TODO: 权限问题的友好展现
+    function reflash(){
+        var url_get = '/superset/dashboard_json/4/'
+        $.get(url_get).done(function (response) {
+            // 先拿这个图表的参数
+            console.log(response)
+
+            //初始化
+            $('#dashboard_title').children().remove()
+
+            //标题
+            $('#dashboard_title').append('<h2  style="margin-left: 10px">'+response.dashboard_title+'</h2>')
+
+            //每个slice
+            response.slices.forEach(function(val,index, arr){
+                var url = '/superset/explore_json/table/'
+                var table_id = val.form_data.datasource.split('__')[0]
+
+                // form_data 可以根据页面参数进行修改
+                //TODO: 写组件-通用选择框
+                //例子：男女选择
+                console.log(val.form_data.filters)
+                if ($('#boy').is(':checked') && $('#girl').is(':checked')) {
+                    val.form_data.filters.push({"col": "gender", "val": ["boy","girl"], "op": "in"})
+                } else {
+                    if ($('#girl').is(':checked')) {
+                        val.form_data.filters.push({"col": "gender", "val": ["girl"], "op": "in"})
+                    }
+                    if ($('#boy').is(':checked')) {
+                        val.form_data.filters.push({"col": "gender", "val": ["boy"], "op": "in"})
+                    }
+
+                }
+                console.log(val.form_data.filters)
+                url = url + table_id  + '?form_data=' + JSON.stringify(val.form_data)
+                console.log(url)
+
+                //TODO: 这里是写死了，后面要做成组件
+                if (val.slice_id == 37) {
+                    echarts.dispose(document.getElementById("pie"))
+                    var myChart= echarts.init(document.getElementById('pie'))
+                    $.get(url).done(function (response) {
+                            // 数据适配echart格式
+                            var values = []
+                            var legend = []
+                            response.data.forEach(function(val,index, arr){
+                               values.push({
+                                    'value':val.y,
+                                    'name': val.x
+                               })
+                               legend.push(val.x)        
+                            })
+
+                            //重载
+                            //myChart.setOption(option, true)
+                            
+                            myChart.setOption({
+                                title : {
+                                    text: val.slice_name,
+                                    x:'center'
+                                },
+                                tooltip : {
+                                    trigger: 'item',
+                                    formatter: "{a} <br/>{b} : {c} ({d}%)"
+                                },
+                                legend:{
+                                    orient: 'vertical',
+                                    left: 'left',
+                                    data: legend,
+                                },
+                                series : [
+                                    //pie的格式，之后要对不同图案做封装
+                                    {
+                                        name: val.slice_name,
+                                        type: response.form_data.viz_type,
+                                        radius : '55%',
+                                        center: ['50%', '60%'],
+                                        data: values,
+                                        itemStyle: {
+                                            emphasis: {
+                                                shadowBlur: 10,
+                                                shadowOffsetX: 0,
+                                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                            }
+                                        }
+                                    }
+                                ],
+                            }, true);
+
+                    })
+                } else {
+                    echarts.dispose(document.getElementById("bar"))
+                    var myChart= echarts.init(document.getElementById('bar'))
+                    $.get(url).done(function (response) {
+                            // 数据适配echart格式
+                            console.log(response)
+                            var values = []
+                            var legend = []
+                            var xAxis_values = []
+                            response.data.forEach(function(val,index, arr){
+                                var tmp_values = []
+                                console.log(val.values)
+                                val.values.forEach(function(v,i, arr){
+                                   tmp_values.push(v.y)
+                                   if (index==0){
+                                       xAxis_values.push(v.x)
+                                   }
+                                })
+                                values.push(tmp_values)
+                                legend.push(val.key)       
+                            })
+
+                            console.log(values)
+                            console.log(legend)
+                            console.log(xAxis_values)
+                            
+                            myChart.setOption({
+                                title : {
+                                    text: val.slice_name,
+                                    x:'center'
+                                },
+                                legend:{
+                                    orient: 'vertical',
+                                    left: 'left',
+                                    data: legend,
+                                },
+                                tooltip : {
+                                    trigger: 'axis',
+                                    axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+                                        type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+                                    }
+                                },
+                                xAxis : [
+                                    {
+                                        type : 'category',
+                                        data : xAxis_values
+                                    }
+                                ],
+                                yAxis : [
+                                    {
+                                        type : 'value'
+                                    }
+                                ],
+                                series : gene_series(values, legend)
+                            }, true);
+
+                    })
+                }
+
+                
+                     
+            })
+        })
+    }
+   
+
+</script>
+</body>

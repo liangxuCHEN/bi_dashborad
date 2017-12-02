@@ -118,6 +118,7 @@ var myChart1= echarts.init(document.getElementById('pie'));
     var url_form_data = '/superset/slice_json/37'
     // var form_data = {"slice_id": 18, "viz_type": "pie", "row_limit": 50000, "metric": "sum__num", "since": "100 years ago", "groupby": ["gender"], "metrics": ["sum__num"], "compare_lag": "10", "limit": "25", "until": "now", "granularity": "ds", "markup_type": "markdown", "where": "", "compare_suffix": "o10Y", "datasource": "3__table"}
     
+    //TODO: 权限问题的友好展现
     $.get(url_form_data).done(function (response) {
         // 先拿这个图表的参数
         form_data = response
